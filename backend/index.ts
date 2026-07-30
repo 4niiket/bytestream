@@ -69,29 +69,38 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: "Internal server error. Please try again later." });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, async () => {
-  console.log(`🚀 ByteStream API running on http://localhost:${PORT}`);
-  
-  // Initialize Redis
-  await initializeRedis();
-  
-  // Preload recent videos on startup
-  try {
-    const recentVideos = await prisma.video.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      select: { id: true },
-    });
-    
-    if (recentVideos.length > 0) {
-      const videoIds = recentVideos.map(v => v.id);
-      await preloadVideos(videoIds);
+async function startServer() {
+  const PORT = process.env.PORT || 3001;
+
+  app.listen(PORT, async () => {
+    console.log(`🚀 ByteStream API running on http://localhost:${PORT}`);
+
+    // Initialize Redis
+    await initializeRedis();
+
+    // Preload recent videos on startup
+    try {
+      const recentVideos = await prisma.video.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+
+      if (recentVideos.length > 0) {
+        const videoIds = recentVideos.map(v => v.id);
+        await preloadVideos(videoIds);
+      }
+    } catch (err) {
+      console.warn("Failed to preload videos:", err instanceof Error ? err.message : err);
     }
-  } catch (err) {
-    console.warn("Failed to preload videos:", err instanceof Error ? err.message : err);
-  }
-  
-  // Check Piston in background — don't block server start
-  checkPistonHealth().catch(console.error);
-});
+
+    // Check Piston in background — don't block server start
+    checkPistonHealth().catch(console.error);
+  });
+}
+
+if (process.env.NODE_ENV !== "production") {
+  void startServer();
+}
+
+export default app;
