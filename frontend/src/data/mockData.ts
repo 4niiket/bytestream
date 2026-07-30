@@ -20,6 +20,7 @@ export interface Video {
   likes?: number;
   comments?: number;
   status?: "published" | "draft";
+  isLiked?: boolean;
 }
 
 export interface Activity {

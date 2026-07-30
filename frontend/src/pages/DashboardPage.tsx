@@ -18,7 +18,7 @@ import { DashboardLayout } from "../components/dashboard/DashboardLayout";
 import { ProfileOverview } from "../components/dashboard/ProfileOverview";
 import { SectionHeader } from "../components/dashboard/SectionHeader";
 import { VideoCard } from "../components/dashboard/VideoCard";
-import { VideoCardSkeleton } from "../components/dashboard/Skeleton";
+
 import { EmptyState } from "../components/dashboard/EmptyState";
 import { SubscriberCard } from "../components/dashboard/SubscriberCard";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed";
