@@ -1,0 +1,9 @@
+# pack-refs with: peeled fully-peeled sorted 
+b8ddef5527dc651390945797c567d3e8d5b684e6 refs/remotes/origin/adarsh/landingpage
+604c9ee80ba8684af2734ba261b2488d9de9c391 refs/remotes/origin/adarsh/uploading-fetching
+dfec9a8c62a1d7a0981ea17373724fb278755e8e refs/remotes/origin/anujparashar
+a24f497f8fd4f33231a90c6aa6e18c9557b6252a refs/remotes/origin/archive/old-version
+abe085e2fd9866eb592e3c6b7a35c0f4336c85a4 refs/remotes/origin/deploy
+25b576872ebd3eb3790517ff8fae56d68cf92f7d refs/remotes/origin/feature/aws-s3-uploads
+d45088ac9b200ae174c6d8e8f7d7604eaca38440 refs/remotes/origin/krish-update
+e8deccc7115872cc40e56add67bd673a8985425d refs/remotes/origin/main
