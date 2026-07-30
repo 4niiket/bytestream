@@ -85,7 +85,7 @@ export const getVideoFeed = async (_req: Request, res: Response) => {
     });
 
     const playableVideos = await Promise.all(
-      videos.map(async (video) => ({
+      videos.map(async (video: { _count: { videoLikes: number; videoDislikes: number }; videoUrl: string | null }) => ({
         ...video,
         likeCount: video._count.videoLikes,
         dislikeCount: video._count.videoDislikes,
@@ -124,7 +124,7 @@ export const searchVideos = async (req: Request, res: Response) => {
     });
 
     const playableVideos = await Promise.all(
-      videos.map(async (video) => ({
+      videos.map(async (video: { _count: { videoLikes: number; videoDislikes: number }; videoUrl: string | null }) => ({
         ...video,
         likeCount: video._count.videoLikes,
         dislikeCount: video._count.videoDislikes,

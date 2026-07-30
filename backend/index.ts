@@ -87,7 +87,7 @@ async function startServer() {
       });
 
       if (recentVideos.length > 0) {
-        const videoIds = recentVideos.map(v => v.id);
+        const videoIds = recentVideos.map((v: { id: number }) => v.id);
         await preloadVideos(videoIds);
       }
     } catch (err) {

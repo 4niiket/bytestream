@@ -42,7 +42,10 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
       },
     });
 
-    const mappedVideos = videos.map((video) => ({
+    const mappedVideos = videos.map((video: {
+      _count: { comments: number };
+      [key: string]: unknown;
+    }) => ({
       ...video,
       commentCount: video._count.comments,
     }));
@@ -188,7 +191,7 @@ export const getUserDashboard = async (req: AuthenticatedRequest, res: Response)
       },
     };
 
-    const likedSet = new Set(likedVideos.map((video) => video.id));
+    const likedSet = new Set(likedVideos.map((video: { id: number }) => video.id));
 
     const mapVideo = (video: {
       id: number;
@@ -210,17 +213,23 @@ export const getUserDashboard = async (req: AuthenticatedRequest, res: Response)
       isLiked: likedSet.has(video.id),
     });
 
-    const liked = likedVideos.map((video) => ({
+    const liked = likedVideos.map((video: {
+      id: number;
+      videoTitle: string;
+      creator: { username: string };
+      _count: { videoLikes: number; comments: number };
+      createdAt: Date;
+    }) => ({
       ...mapVideo(video),
       isLiked: true,
     }));
 
-    const saved = savedEntries.map((entry) => ({
+    const saved = savedEntries.map((entry: { video: { id: number; videoTitle: string; creator: { username: string }; _count: { videoLikes: number; comments: number }; createdAt: Date }; id: number }) => ({
       ...mapVideo(entry.video),
       isLiked: likedSet.has(entry.video.id),
     }));
 
-    const uploadsList = uploads.map((video) => ({
+    const uploadsList = uploads.map((video: { id: number; videoTitle: string; creator: { username: string }; _count: { videoLikes: number; comments: number }; createdAt: Date }) => ({
       ...mapVideo(video),
       isLiked: undefined,
     }));
@@ -230,14 +239,14 @@ export const getUserDashboard = async (req: AuthenticatedRequest, res: Response)
       : await prisma.subscription.groupBy({
           by: ["creatorId"],
           _count: { creatorId: true },
-          where: { creatorId: { in: subscriptions.map((sub) => sub.creator.id) } },
+          where: { creatorId: { in: subscriptions.map((sub: { creator: { id: number } }) => sub.creator.id) } },
         });
 
     const creatorsMap = new Map(
-      creatorCounts.map((item) => [item.creatorId, item._count.creatorId]),
+      creatorCounts.map((item: { creatorId: number; _count: { creatorId: number } }) => [item.creatorId, item._count.creatorId]),
     );
 
-    const subscriptionList = subscriptions.map((sub) => ({
+    const subscriptionList = subscriptions.map((sub: { creator: { id: number; username: string }; createdAt: Date }) => ({
       id: sub.creator.id,
       name: sub.creator.username,
       handle: `@${sub.creator.username}`,
@@ -247,28 +256,28 @@ export const getUserDashboard = async (req: AuthenticatedRequest, res: Response)
     }));
 
     const activityItems = [
-      ...uploads.map((video) => ({
+      ...uploads.map((video: { id: number; videoTitle: string; createdAt: Date }) => ({
         id: `upload-${video.id}`,
         type: "uploaded" as const,
         text: "You published",
         target: video.videoTitle,
         timestamp: video.createdAt,
       })),
-      ...savedEntries.map((entry) => ({
+      ...savedEntries.map((entry: { id: number; addedAt: Date; video: { videoTitle: string } }) => ({
         id: `saved-${entry.id}`,
         type: "saved" as const,
         text: "You saved",
         target: entry.video.videoTitle,
         timestamp: entry.addedAt,
       })),
-      ...subscriptions.map((sub) => ({
+      ...subscriptions.map((sub: { creator: { id: number; username: string }; createdAt: Date }) => ({
         id: `sub-${sub.creator.id}`,
         type: "subscribed" as const,
         text: "You subscribed to",
         target: sub.creator.username,
         timestamp: sub.createdAt,
       })),
-      ...recentComments.map((comment) => ({
+      ...recentComments.map((comment: { id: number; createdAt: Date; video: { videoTitle: string } }) => ({
         id: `comment-${comment.id}`,
         type: "commented" as const,
         text: "You commented on",
@@ -286,7 +295,7 @@ export const getUserDashboard = async (req: AuthenticatedRequest, res: Response)
         timeAgo: formatTimeAgo(item.timestamp),
       }));
 
-    const recommendationList = recommendations.map((video) => ({
+    const recommendationList = recommendations.map((video: { id: number; videoTitle: string; creator: { username: string }; _count: { videoLikes: number; comments: number }; createdAt: Date }) => ({
       ...mapVideo(video),
       isLiked: false,
     }));
