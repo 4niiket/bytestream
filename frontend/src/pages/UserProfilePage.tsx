@@ -183,7 +183,7 @@ export default function UserProfilePage() {
                   {recentComments.slice(0, 5).map((comment) => (
                     <div key={comment.id} className="rounded-3xl border border-border bg-background/80 p-4">
                       <p className="text-sm font-semibold text-foreground">{comment.video.videoTitle}</p>
-                      <p className="mt-3 text-sm text-muted-foreground">{comment.text}</p>
+                      <p className="mt-3 whitespace-pre-wrap break-words text-sm text-muted-foreground">{comment.text}</p>
                       <p className="mt-2 text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</p>
                     </div>
                   ))}

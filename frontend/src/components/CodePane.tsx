@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Maximize2, Minimize2 } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import { api } from '../../lib/api'
 
@@ -73,23 +74,34 @@ type ExecutionStatus = 'Pending' | 'Passed' | 'Failed'
 
 export default function CodePane({ problemTitle, problemDescription, videoId, testCaseCount = 0 }: CodePaneProps) {
   const [language, setLanguage] = useState<Language>('cpp')
+  const [drafts, setDrafts] = useState<Record<Language, string>>({
+    javascript: DEFAULT_CODE.javascript,
+    python: DEFAULT_CODE.python,
+    java: DEFAULT_CODE.java,
+    cpp: DEFAULT_CODE.cpp,
+  })
   const [code, setCode] = useState<string>(DEFAULT_CODE.cpp)
   const [result, setResult] = useState<SubmissionResult | null>(null)
   const [status, setStatus] = useState<ExecutionStatus>('Pending')
   const [running, setRunning] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang)
-    setCode(DEFAULT_CODE[lang])
+    setCode(drafts[lang])
     setResult(null)
     setStatus('Pending')
   }
 
   useEffect(() => {
-    setCode(DEFAULT_CODE[language])
+    setDrafts((current) => ({ ...current, [language]: code }))
+  }, [code, language])
+
+  useEffect(() => {
+    setCode(drafts[language])
     setResult(null)
     setStatus('Pending')
-  }, [videoId, problemTitle, problemDescription, language])
+  }, [videoId, problemTitle, problemDescription, language, drafts])
 
   const execute = async () => {
     setRunning(true)
@@ -126,7 +138,7 @@ export default function CodePane({ problemTitle, problemDescription, videoId, te
   const isLoading = running
 
   return (
-    <div className="flex h-full flex-col bg-[#1e1e1e] text-[#d4d4d4]">
+    <div className={`flex h-full flex-col bg-[#1e1e1e] text-[#d4d4d4] ${isFullscreen ? 'fixed inset-0 z-[60] overflow-hidden' : ''}`}>
       <div className="max-h-44 overflow-y-auto border-b border-[#333] p-5 shrink-0">
         <h2 className="m-0 mb-2 text-lg font-bold text-white">{problemTitle}</h2>
         <p className="m-0 whitespace-pre-wrap text-sm leading-relaxed text-[#a0a0a0]">{problemDescription}</p>
@@ -146,7 +158,14 @@ export default function CodePane({ problemTitle, problemDescription, videoId, te
             {lang}
           </button>
         ))}
-        <span className="ml-auto text-xs text-[#888]">Video #{videoId}</span>
+        <button
+          type="button"
+          onClick={() => setIsFullscreen((prev) => !prev)}
+          className="ml-auto inline-flex items-center gap-2 rounded-lg border border-[#3a3a3a] bg-[#2d2d2d] px-3 py-1.5 text-xs font-medium text-[#d4d4d4] transition-colors hover:bg-[#3e3e3e]"
+        >
+          {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+          {isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+        </button>
       </div>
 
       {testCaseCount === 0 && (
@@ -156,8 +175,8 @@ export default function CodePane({ problemTitle, problemDescription, videoId, te
       )}
 
       {/* Replaced textarea with Monaco Editor wrapped in a styled container */}
-      <div className="flex-1 px-4 py-3 min-h-0">
-        <div className="h-full w-full overflow-hidden rounded-xl border border-[#3a3a3a] bg-[#1e1e1e] focus-within:border-[#0e639c] focus-within:ring-1 focus-within:ring-[#0e639c] transition-shadow">
+      <div className={`flex-1 px-4 py-3 min-h-0 ${isFullscreen ? 'px-6 py-4' : ''}`}>
+        <div className={`h-full w-full overflow-hidden rounded-xl border border-[#3a3a3a] bg-[#1e1e1e] focus-within:border-[#0e639c] focus-within:ring-1 focus-within:ring-[#0e639c] transition-shadow ${isFullscreen ? 'rounded-none border-0' : ''}`}>
           <Editor
             height="100%"
             language={language}

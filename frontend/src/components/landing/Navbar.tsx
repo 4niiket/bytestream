@@ -1,8 +1,27 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { useAuth } from '../../App'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isLandingPage = pathname === '/'
+
+  const appLinks = (
+    <>
+      <Link to="/feed" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        Feed
+      </Link>
+      <Link to="/dashboard" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        Dashboard
+      </Link>
+      <Link to="/create" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        Create
+      </Link>
+      <Link to="/submissions" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        Submissions
+      </Link>
+    </>
+  )
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -14,15 +33,21 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          <a href="#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Features
-          </a>
-          <a href="#how-it-works" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            How It Works
-          </a>
-          <a href="#topics" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-            Topics
-          </a>
+          {isLandingPage ? (
+            <>
+              <a href="#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Features
+              </a>
+              <a href="#how-it-works" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                How It Works
+              </a>
+              <a href="#topics" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Topics
+              </a>
+            </>
+          ) : (
+            appLinks
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -36,7 +61,8 @@ export default function Navbar() {
                 Open Feed
               </Link>
               <Link
-                to="/dashboard"
+                to="/profile/$username"
+                params={{ username: user.username }}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 {user.username.slice(0, 2).toUpperCase()}

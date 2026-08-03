@@ -33,7 +33,8 @@ export default function FeedPage() {
   const navigate = useNavigate()
   const [videos, setVideos] = useState<Video[]>([])
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [comments, setComments] = useState<Comment[]>([])
@@ -44,6 +45,14 @@ export default function FeedPage() {
   const [liked, setLiked] = useState(false)
   const [disliked, setDisliked] = useState(false)
   const [interactionError, setInteractionError] = useState('')
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setSearchQuery(searchInput.trim())
+    }, 400)
+
+    return () => window.clearTimeout(timeout)
+  }, [searchInput])
 
   useEffect(() => {
     if (!user) {
@@ -58,21 +67,23 @@ export default function FeedPage() {
         if (!query?.trim()) {
           const cached = getCachedVideoFeed()
           if (cached && Array.isArray(cached)) {
-            // Use cached data immediately
             setVideos(cached)
             if (cached.length > 0) {
               setActiveVideo(cached[0])
             }
-            setLoading(false)
-            // Refresh in background
+
             try {
               const res = await api.get('/videos/feed')
               const feedVideos = Array.isArray(res.data) ? res.data : []
               if (feedVideos.length > 0) {
                 setVideos(feedVideos)
+                const refreshedActiveVideo = feedVideos.find((video) => video.id === activeVideo?.id) ?? feedVideos[0]
+                setActiveVideo(refreshedActiveVideo)
               }
             } catch (err) {
-              // Silently fail - we already have cached data
+              // Silently fail - keep the cached feed visible
+            } finally {
+              setLoading(false)
             }
             return
           }
@@ -86,8 +97,9 @@ export default function FeedPage() {
         })
         const feedVideos = Array.isArray(res.data) ? res.data : []
         setVideos(feedVideos)
-        if (feedVideos.length > 0 && !feedVideos.some((video) => video.id === activeVideo?.id)) {
-          setActiveVideo(feedVideos[0])
+        if (feedVideos.length > 0) {
+          const refreshedActiveVideo = feedVideos.find((video) => video.id === activeVideo?.id) ?? feedVideos[0]
+          setActiveVideo(refreshedActiveVideo)
         }
       } catch (err) {
         setError('Unable to load the video feed. Please try again later.')
@@ -96,8 +108,8 @@ export default function FeedPage() {
       }
     }
 
-    loadFeed(search)
-  }, [navigate, search, user])
+    loadFeed(searchQuery)
+  }, [navigate, searchQuery, user])
 
   useEffect(() => {
     if (!activeVideo) return
@@ -295,7 +307,7 @@ export default function FeedPage() {
     }
 
     try {
-      await api.post(`/comment/${commentId}/like`)
+      await api.post(`/interactions/comment/${commentId}/like`)
       if (activeVideo) fetchComments(activeVideo.id)
     } catch {
       setInteractionError('Unable to like comment.')
@@ -309,7 +321,7 @@ export default function FeedPage() {
     }
 
     try {
-      await api.post(`/comment/${commentId}/dislike`)
+      await api.post(`/interactions/comment/${commentId}/dislike`)
       if (activeVideo) fetchComments(activeVideo.id)
     } catch {
       setInteractionError('Unable to dislike comment.')
@@ -364,8 +376,8 @@ export default function FeedPage() {
             <div className="relative w-full max-w-md">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search videos, algorithms, or topics"
                 className="w-full rounded-3xl border border-border bg-background/80 pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -413,7 +425,8 @@ export default function FeedPage() {
                           }`}
                         >
                           <ThumbsUp className="h-4 w-4" />
-                          {liked ? 'Liked' : 'Like'}
+                          <span>{liked ? 'Liked' : 'Like'}</span>
+                          <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs">{activeLikeCount}</span>
                         </button>
                         <button
                           onClick={toggleDislike}
@@ -422,7 +435,8 @@ export default function FeedPage() {
                           }`}
                         >
                           <ThumbsDown className="h-4 w-4" />
-                          {disliked ? 'Disliked' : 'Dislike'}
+                          <span>{disliked ? 'Disliked' : 'Dislike'}</span>
+                          <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs">{activeDislikeCount}</span>
                         </button>
                         <button
                           onClick={handleToggleWatchLater}
@@ -460,7 +474,7 @@ export default function FeedPage() {
                                 <p className="text-sm font-semibold text-foreground">@{comment.user.username}</p>
                                 <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</p>
                               </div>
-                              <p className="mt-2 text-sm text-muted-foreground">{comment.text}</p>
+                              <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">{comment.text}</p>
                               <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                                 <button
                                   type="button"

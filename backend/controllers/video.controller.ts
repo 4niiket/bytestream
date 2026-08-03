@@ -4,7 +4,7 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { prisma } from "../lib/prisma.js";
 import { s3Client } from "../lib/s3Client.js";
-import { cacheVideo, getCachedVideo, cacheFeed, getCachedFeed } from "../lib/redis.js";
+import { cacheVideo, getCachedVideo, cacheFeed, getCachedFeed,getRedisClient} from "../lib/redis.js";
 import { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
 interface RawTestCase {
@@ -235,6 +235,14 @@ export const confirmUpload = async (req: Request, res: Response) => {
       },
     });
 
+    // Invalidate feed cache because a new video has been added
+    try {
+      const redis = getRedisClient();
+      await redis.del("feed:latest");
+    } catch (err) {
+      console.warn("Failed to invalidate Redis feed cache:", err);
+    }
+
     return res.status(201).json(createdVideo);
   } catch (error) {
     console.error("Failed to confirm upload:", error);
@@ -274,37 +282,67 @@ export const deleteVideo = async (req: AuthenticatedRequest, res: Response) => {
       prisma.video.delete({ where: { id: videoId } }),
     ]);
 
-    return res.status(200).json({ deleted: true, videoId });
+    // Invalidate Redis cache
+    try {
+      const redis = getRedisClient();
+
+      await Promise.all([
+        redis.del(`video:${videoId}`),
+        redis.del("feed:latest"),
+      ]);
+
+      console.log(`🗑️ Cache invalidated for video:${videoId}`);
+    } catch (err) {
+      console.warn("Failed to invalidate Redis cache:", err);
+    }
+
+    return res.status(200).json({
+      deleted: true,
+      videoId,
+    });
   } catch (error) {
     console.error("Failed to delete video:", error);
-    return res.status(500).json({ error: "Failed to delete video" });
+    return res.status(500).json({
+      error: "Failed to delete video",
+    });
   }
 };
 
 export const getVideoById = async (req: Request, res: Response) => {
-  const videoId = Number(req.params.videoId)
-  if (isNaN(videoId)) {
-    return res.status(400).json({ error: "Invalid video ID." })
+  const videoId = Number(req.params.videoId);
+
+  if (Number.isNaN(videoId)) {
+    return res.status(400).json({ error: "Invalid video ID." });
   }
 
   try {
-    // Try to get from Redis cache first
+    // Check Redis cache first
     const cachedVideo = await getCachedVideo(videoId);
+
     if (cachedVideo) {
-      return res.json(cachedVideo);
+      console.log(`✅ Redis HIT: video:${videoId}`);
+      return res.status(200).json(cachedVideo);
     }
 
+    console.log(`❌ Redis MISS: video:${videoId}`);
+
+    // Fetch from PostgreSQL
     const video = await prisma.video.findUnique({
       where: { id: videoId },
       include: {
         creator: { select: { username: true } },
         codePane: true,
-        _count: { select: { videoLikes: true, videoDislikes: true } },
+        _count: {
+          select: {
+            videoLikes: true,
+            videoDislikes: true,
+          },
+        },
       },
-    })
+    });
 
     if (!video) {
-      return res.status(404).json({ error: "Video not found." })
+      return res.status(404).json({ error: "Video not found." });
     }
 
     const videoData = {
@@ -312,14 +350,16 @@ export const getVideoById = async (req: Request, res: Response) => {
       likeCount: video._count.videoLikes,
       dislikeCount: video._count.videoDislikes,
       videoUrl: await getPlayableVideoUrl(video.videoUrl),
-    }
+    };
 
-    // Cache the video for future requests
+    // Store in Redis
     await cacheVideo(videoId, videoData);
 
-    return res.json(videoData)
+    return res.status(200).json(videoData);
   } catch (err) {
-    console.error("Error fetching video by ID:", err)
-    return res.status(500).json({ error: "Failed to fetch video details" })
+    console.error("Error fetching video by ID:", err);
+    return res.status(500).json({
+      error: "Failed to fetch video details",
+    });
   }
 };

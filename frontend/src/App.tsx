@@ -1,5 +1,6 @@
 import {
   RouterProvider,
+  Outlet,
   createRouter,
   createRootRoute,
   createRoute,
@@ -14,6 +15,7 @@ import VideoDetailPage from './pages/VideoDetailPage'
 import SubmissionHistoryPage from './pages/SubmissionHistoryPage'
 import UserProfilePage from './pages/UserProfilePage'
 import DashboardPage from './pages/DashboardPage'
+import Navbar from './components/landing/Navbar'
 
 // ─── Auth Context ────────────────────────────────────────────────────────────
 
@@ -89,7 +91,19 @@ function NotFoundComponent() {
   )
 }
 
+function RootLayout() {
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen pt-20">
+        <Outlet />
+      </div>
+    </>
+  )
+}
+
 const rootRoute = createRootRoute({
+  component: RootLayout,
   notFoundComponent: NotFoundComponent,
 })
 

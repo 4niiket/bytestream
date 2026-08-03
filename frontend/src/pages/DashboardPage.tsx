@@ -1,19 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart, Bookmark, Upload, Sparkles } from "lucide-react";
-import {
-  Activity,
-  Creator,
-  Profile,
-  Video,
-  mockActivity,
-  mockLiked,
-  mockProfile,
-  mockRecommended,
-  mockSaved,
-  mockSubscribers,
-  mockUploads,
-} from "../data/mockData";
+import type { Activity, Creator, Profile, Video } from "../data/mockData";
 import { DashboardLayout } from "../components/dashboard/DashboardLayout";
 import { ProfileOverview } from "../components/dashboard/ProfileOverview";
 import { SectionHeader } from "../components/dashboard/SectionHeader";
@@ -24,33 +12,112 @@ import { SubscriberCard } from "../components/dashboard/SubscriberCard";
 import { ActivityFeed } from "../components/dashboard/ActivityFeed";
 import videoPreview from "../assets/video-preview.jpg";
 import logo from "../assets/bytestream-logo.png";
+import { api } from "../lib/api";
 
-const normalizeVideo = (video: Video): Video => ({
-  ...video,
-  thumbnail: video.thumbnail || videoPreview,
+interface DashboardApiResponse {
+  profile: {
+    username: string;
+    handle?: string;
+    role?: Profile["role"];
+    bio?: string;
+    avatar?: string;
+    stats: Profile["stats"];
+  };
+  likedVideos: Array<Partial<Video> & { id: number | string; title?: string; creator?: string; creatorAvatar?: string; thumbnail?: string; duration?: string | null; views?: number; likes?: number; comments?: number; status?: Video["status"]; isLiked?: boolean }>;
+  savedVideos: Array<Partial<Video> & { id: number | string; title?: string; creator?: string; creatorAvatar?: string; thumbnail?: string; duration?: string | null; views?: number; likes?: number; comments?: number; status?: Video["status"]; isLiked?: boolean }>;
+  uploads: Array<Partial<Video> & { id: number | string; title?: string; creator?: string; creatorAvatar?: string; thumbnail?: string; duration?: string | null; views?: number; likes?: number; comments?: number; status?: Video["status"]; isLiked?: boolean }>;
+  subscriptions: Array<{ id: number | string; name: string; handle?: string; avatar?: string; subscribers?: number; isSubscribed?: boolean }>;
+  activity: Activity[];
+  recommendations: Array<Partial<Video> & { id: number | string; title?: string; creator?: string; creatorAvatar?: string; thumbnail?: string; duration?: string | null; views?: number; likes?: number; comments?: number; status?: Video["status"]; isLiked?: boolean }>;
+}
+
+const normalizeVideo = (video: Partial<Video> & { id: number | string; title?: string; creator?: string; creatorAvatar?: string; thumbnail?: string; duration?: string | null; views?: number; likes?: number; comments?: number; status?: Video["status"]; isLiked?: boolean }): Video => ({
+  id: String(video.id),
+  title: video.title ?? "Untitled video",
+  creator: video.creator ?? "Unknown creator",
   creatorAvatar: video.creatorAvatar || logo,
+  thumbnail: video.thumbnail || videoPreview,
+  duration: video.duration ?? "",
+  views: video.views ?? 0,
+  likes: video.likes ?? 0,
+  comments: video.comments ?? 0,
+  status: video.status ?? "published",
+  isLiked: Boolean(video.isLiked),
 });
+
+const normalizeProfile = (payload?: DashboardApiResponse["profile"] | null): Profile | null => {
+  if (!payload) return null;
+  return {
+    username: payload.username ?? "User",
+    handle: payload.handle ?? `@${payload.username ?? "user"}`,
+    role: payload.role ?? "learner",
+    bio: payload.bio ?? "",
+    avatar: payload.avatar || logo,
+    stats: {
+      likes: payload.stats?.likes ?? 0,
+      saved: payload.stats?.saved ?? 0,
+      subscribers: payload.stats?.subscribers ?? 0,
+      uploads: payload.stats?.uploads ?? 0,
+    },
+  };
+};
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile>({
-    ...mockProfile,
-    avatar: mockProfile.avatar || logo,
-  });
-  const [likedVideos, setLikedVideos] = useState<Video[]>(
-    mockLiked.map(normalizeVideo),
-  );
-  const [savedVideos, setSavedVideos] = useState<Video[]>(
-    mockSaved.map(normalizeVideo),
-  );
-  const [uploads, setUploads] = useState<Video[]>(
-    mockUploads.map(normalizeVideo),
-  );
-  const [subscriptions, setSubscriptions] = useState<Creator[]>(mockSubscribers);
-  const [activity] = useState<Activity[]>(mockActivity);
-  const [recommendations, setRecommendations] = useState<Video[]>(
-    mockRecommended.map(normalizeVideo),
-  );
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [likedVideos, setLikedVideos] = useState<Video[]>([]);
+  const [savedVideos, setSavedVideos] = useState<Video[]>([]);
+  const [uploads, setUploads] = useState<Video[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Creator[]>([]);
+  const [activity, setActivity] = useState<Activity[]>([]);
+  const [recommendations, setRecommendations] = useState<Video[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboard = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const { data } = await api.get<DashboardApiResponse>("/users/me/dashboard");
+
+        if (!isMounted) return;
+
+        setProfile(normalizeProfile(data.profile));
+        setLikedVideos((data.likedVideos ?? []).map(normalizeVideo));
+        setSavedVideos((data.savedVideos ?? []).map(normalizeVideo));
+        setUploads((data.uploads ?? []).map(normalizeVideo));
+        setSubscriptions((data.subscriptions ?? []).map((creator) => ({
+          id: String(creator.id),
+          name: creator.name,
+          handle: creator.handle ?? `@${creator.name}`,
+          avatar: creator.avatar || logo,
+          subscribers: creator.subscribers ?? 0,
+          isSubscribed: creator.isSubscribed ?? true,
+        })));
+        setActivity(data.activity ?? []);
+        setRecommendations((data.recommendations ?? []).map(normalizeVideo));
+      } catch (err) {
+        if (!isMounted) return;
+        console.error("Failed to load dashboard", err);
+        setError("Unable to load your dashboard right now. Please try again.");
+        setProfile(null);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const likedIds = useMemo(
     () => new Set(likedVideos.map((video) => video.id)),
@@ -77,13 +144,16 @@ export default function DashboardPage() {
 
   const handleRemoveSaved = (videoId: string) => {
     setSavedVideos((current) => current.filter((video) => video.id !== videoId));
-    setProfile((current) => ({
-      ...current,
-      stats: {
-        ...current.stats,
-        saved: Math.max(0, current.stats.saved - 1),
-      },
-    }));
+    setProfile((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        stats: {
+          ...current.stats,
+          saved: Math.max(0, current.stats.saved - 1),
+        },
+      };
+    });
   };
 
   const handleToggleSubscription = (creatorId: string) => {
@@ -98,13 +168,16 @@ export default function DashboardPage() {
 
   const handleDeleteUpload = (videoId: string) => {
     setUploads((current) => current.filter((video) => video.id !== videoId));
-    setProfile((current) => ({
-      ...current,
-      stats: {
-        ...current.stats,
-        uploads: Math.max(0, current.stats.uploads - 1),
-      },
-    }));
+    setProfile((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        stats: {
+          ...current.stats,
+          uploads: Math.max(0, current.stats.uploads - 1),
+        },
+      };
+    });
   };
 
   const handleEditUpload = (videoId: string) => {
@@ -114,7 +187,15 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {profile ? (
+      {isLoading ? (
+        <div className="glass-card rounded-2xl border border-border bg-secondary/40 p-6 text-sm text-muted-foreground">
+          Loading your dashboard…
+        </div>
+      ) : error ? (
+        <div className="glass-card rounded-2xl border border-border bg-secondary/40 p-6 text-sm text-destructive">
+          {error}
+        </div>
+      ) : profile ? (
         <div className="space-y-10">
           <ProfileOverview profile={profile} />
 
