@@ -24,7 +24,6 @@
     "@types/node": "^25.6.0",
     "@types/node-fetch": "^2.6.12",
     "@types/pg": "^8.20.0",
-    "prisma": "^7.7.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   },
@@ -41,6 +40,7 @@
     "jsonwebtoken": "^9.0.3",
     "node-fetch": "^3.3.2",
     "pg": "^8.20.0",
+    "prisma": "^7.9.1",
     "redis": "^6.2.0"
   }
 }
