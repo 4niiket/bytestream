@@ -96,7 +96,7 @@ async function startServer() {
   }
 
   app.listen(PORT, () => {
-    console.log(`🚀 ByteStream API running on http://localhost:${PORT}`);
+    console.log(`🚀 ByteStream API listening on port ${PORT}`);
 
     // Run in background
     checkPistonHealth().catch(console.error);
