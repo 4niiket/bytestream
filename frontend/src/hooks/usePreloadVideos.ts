@@ -22,7 +22,7 @@ export function usePreloadVideos() {
         const cached = sessionStorage.getItem(CACHE_KEY)
         if (cached) {
           const parsed: CachedVideoFeed = JSON.parse(cached)
-          if (parsed.expiresAt > Date.now()) {
+          if (parsed && typeof parsed.expiresAt === 'number' && parsed.expiresAt > Date.now()) {
             // Cache is still fresh, no need to refetch
             return
           }
@@ -30,10 +30,11 @@ export function usePreloadVideos() {
 
         // Fetch videos in background (non-blocking)
         const response = await api.get('/videos/feed')
+        const feedData = Array.isArray(response?.data) ? response.data : []
         
-        // Cache the response
+        // Cache the response safely even if 0 videos
         const cacheData: CachedVideoFeed = {
-          data: response.data,
+          data: feedData,
           timestamp: Date.now(),
           expiresAt: Date.now() + CACHE_TTL,
         }
@@ -58,6 +59,10 @@ export function getCachedVideoFeed(): unknown | null {
     if (!cached) return null
 
     const parsed: CachedVideoFeed = JSON.parse(cached)
+    if (!parsed || typeof parsed.expiresAt !== 'number') {
+      sessionStorage.removeItem(CACHE_KEY)
+      return null
+    }
     
     // Check if cache is still fresh
     if (parsed.expiresAt < Date.now()) {

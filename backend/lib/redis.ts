@@ -86,12 +86,48 @@ export const getCachedFeed = async (): Promise<unknown | null> => {
   }
 };
 
+import { prisma } from "./prisma.js";
+
 export const preloadVideos = async (
   videoIds: number[]
 ): Promise<void> => {
-  console.log(
-    `Redis cache ready. Preload requested for ${videoIds.length} videos.`
-  );
+  try {
+    if (!videoIds || videoIds.length === 0) {
+      console.log("✓ Redis cache ready. No videos available to preload.");
+      return;
+    }
+
+    console.log(
+      `Redis cache ready. Preload requested for ${videoIds.length} video(s)...`
+    );
+
+    const videos = await prisma.video.findMany({
+      where: { id: { in: videoIds } },
+      include: {
+        creator: { select: { username: true } },
+        codePane: true,
+        _count: { select: { videoLikes: true, videoDislikes: true } },
+      },
+    });
+
+    if (videos.length === 0) {
+      console.log("✓ Redis cache ready. Preloaded 0 videos (database returned no matches).");
+      return;
+    }
+
+    for (const video of videos) {
+      const videoData = {
+        ...video,
+        likeCount: video._count.videoLikes,
+        dislikeCount: video._count.videoDislikes,
+      };
+      await cacheVideo(video.id, videoData);
+    }
+
+    console.log(`✓ Successfully preloaded ${videos.length} video(s) into Redis cache`);
+  } catch (err) {
+    console.warn("Video preload encountered an error (non-blocking):", err instanceof Error ? err.message : err);
+  }
 };
 
 export const clearCache = async (): Promise<void> => {

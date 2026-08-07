@@ -70,15 +70,19 @@ export default function FeedPage() {
             setVideos(cached)
             if (cached.length > 0) {
               setActiveVideo(cached[0])
+            } else {
+              setActiveVideo(null)
             }
 
             try {
               const res = await api.get('/videos/feed')
               const feedVideos = Array.isArray(res.data) ? res.data : []
+              setVideos(feedVideos)
               if (feedVideos.length > 0) {
-                setVideos(feedVideos)
                 const refreshedActiveVideo = feedVideos.find((video) => video.id === activeVideo?.id) ?? feedVideos[0]
                 setActiveVideo(refreshedActiveVideo)
+              } else {
+                setActiveVideo(null)
               }
             } catch (err) {
               // Silently fail - keep the cached feed visible
@@ -100,6 +104,8 @@ export default function FeedPage() {
         if (feedVideos.length > 0) {
           const refreshedActiveVideo = feedVideos.find((video) => video.id === activeVideo?.id) ?? feedVideos[0]
           setActiveVideo(refreshedActiveVideo)
+        } else {
+          setActiveVideo(null)
         }
       } catch (err) {
         setError('Unable to load the video feed. Please try again later.')
@@ -115,8 +121,8 @@ export default function FeedPage() {
     if (!activeVideo) return
     addWatchedVideo({
       id: activeVideo.id,
-      videoTitle: activeVideo.videoTitle,
-      creator: activeVideo.creator.username,
+      videoTitle: activeVideo.videoTitle || 'Untitled Video',
+      creator: activeVideo.creator?.username || 'Unknown Creator',
       watchedAt: new Date().toISOString(),
     })
     setHistory(getWatchedHistory())
@@ -403,11 +409,15 @@ export default function FeedPage() {
                           <video
                             key={activeVideo.id}
                             controls
+                            preload="metadata"
                             src={activeVideo.videoUrl}
+                            onError={() => {
+                              console.warn('Video failed to load (non-fatal):', activeVideo.videoUrl)
+                            }}
                             className="h-full w-full object-contain"
                           />
                         ) : (
-                          <div className="flex h-full items-center justify-center text-muted-foreground">
+                          <div className="flex h-full items-center justify-center text-muted-foreground p-6 text-center">
                             Video file unavailable
                           </div>
                         )}
@@ -416,7 +426,7 @@ export default function FeedPage() {
 
                     <div className="rounded-3xl border border-border bg-background/80 p-5 shadow-sm">
                       <p className="text-sm text-muted-foreground">Now playing</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-foreground">{activeVideo.videoTitle}</h2>
+                      <h2 className="mt-2 text-2xl font-semibold text-foreground">{activeVideo.videoTitle || 'Untitled Video'}</h2>
                       <div className="mt-4 flex flex-wrap gap-3">
                         <button
                           onClick={toggleLike}
@@ -452,8 +462,8 @@ export default function FeedPage() {
 
                     <div className="rounded-3xl border border-border bg-background/80 p-5 shadow-sm">
                       <p className="text-sm text-muted-foreground">Active problem</p>
-                      <h3 className="mt-3 text-xl font-semibold text-foreground">{activeVideo.codePane.problemTitle}</h3>
-                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{activeVideo.codePane.problemDescription}</p>
+                      <h3 className="mt-3 text-xl font-semibold text-foreground">{activeVideo.codePane?.problemTitle ?? 'No problem title'}</h3>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{activeVideo.codePane?.problemDescription ?? 'No description provided.'}</p>
                     </div>
 
                     <div className="rounded-3xl border border-border bg-background/80 p-5 shadow-sm">
@@ -542,10 +552,10 @@ export default function FeedPage() {
                       <p className="text-sm text-muted-foreground">Code panel</p>
                       <div className="mt-4 min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-[#111]">
                         <CodePane
-                          problemTitle={activeVideo.codePane.problemTitle}
-                          problemDescription={activeVideo.codePane.problemDescription}
+                          problemTitle={activeVideo.codePane?.problemTitle ?? 'Problem Title'}
+                          problemDescription={activeVideo.codePane?.problemDescription ?? 'Problem Description'}
                           videoId={activeVideo.id}
-                          testCaseCount={Array.isArray(activeVideo.codePane.testCases) ? activeVideo.codePane.testCases.length : 0}
+                          testCaseCount={Array.isArray(activeVideo.codePane?.testCases) ? activeVideo.codePane.testCases.length : 0}
                         />
                       </div>
                     </div>

@@ -92,16 +92,18 @@ export default function VideoDetailPage() {
             <Link to="/feed" className="text-sm text-muted-foreground hover:text-foreground">
               ← Back to feed
             </Link>
-            <h1 className="mt-3 text-3xl font-heading font-bold">{video.videoTitle}</h1>
-            <p className="text-sm text-muted-foreground">By @{video.creator.username}</p>
+            <h1 className="mt-3 text-3xl font-heading font-bold">{video.videoTitle || 'Untitled Video'}</h1>
+            <p className="text-sm text-muted-foreground">By @{video.creator?.username ?? 'creator'}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a
-              href={`/profile/${video.creator.username}`}
-              className="rounded-xl border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
-            >
-              View Creator
-            </a>
+            {video.creator?.username ? (
+              <a
+                href={`/profile/${video.creator.username}`}
+                className="rounded-xl border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                View Creator
+              </a>
+            ) : null}
           </div>
         </div>
 
@@ -111,11 +113,15 @@ export default function VideoDetailPage() {
               {video.videoUrl ? (
                 <video
                   controls
+                  preload="metadata"
                   className="w-full bg-black"
                   src={video.videoUrl}
+                  onError={() => {
+                    console.warn('Detail video failed to load (non-fatal):', video.videoUrl)
+                  }}
                 />
               ) : (
-                <div className="flex h-80 items-center justify-center bg-[#111] text-muted-foreground">
+                <div className="flex h-80 items-center justify-center bg-[#111] text-muted-foreground p-6 text-center">
                   Video file not available yet
                 </div>
               )}
@@ -124,7 +130,7 @@ export default function VideoDetailPage() {
             <div className="glass-card rounded-3xl border border-border bg-secondary/40 p-6">
               <h2 className="text-xl font-semibold text-foreground">Problem</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {video.codePane.problemDescription}
+                {video.codePane?.problemDescription ?? 'No description provided.'}
               </p>
             </div>
           </div>
@@ -132,10 +138,10 @@ export default function VideoDetailPage() {
           <div className="glass-card rounded-3xl border border-border bg-secondary/40 p-6">
             <h2 className="text-xl font-semibold text-foreground mb-3">Interactive Coding</h2>
             <CodePane
-              problemTitle={video.codePane.problemTitle}
-              problemDescription={video.codePane.problemDescription}
+              problemTitle={video.codePane?.problemTitle ?? 'Problem Title'}
+              problemDescription={video.codePane?.problemDescription ?? 'Problem Description'}
               videoId={video.id}
-              testCaseCount={Array.isArray(video.codePane.testCases) ? video.codePane.testCases.length : 0}
+              testCaseCount={Array.isArray(video.codePane?.testCases) ? video.codePane.testCases.length : 0}
             />
           </div>
         </div>

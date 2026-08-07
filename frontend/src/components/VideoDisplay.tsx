@@ -23,10 +23,10 @@ interface VideoDisplayProps {
 }
 
 export default function VideoDisplay({ videos, selectedVideoId, onVideoChange }: VideoDisplayProps) {
-  if (videos.length === 0) {
+  if (!videos || videos.length === 0) {
     return (
-      <div className="p-10 text-white text-center flex items-center justify-center h-full">
-        No videos found. Add some via Prisma Studio!
+      <div className="p-10 text-muted-foreground text-center flex items-center justify-center h-full">
+        No videos found. Upload one to start playing!
       </div>
     )
   }
@@ -50,10 +50,13 @@ export default function VideoDisplay({ videos, selectedVideoId, onVideoChange }:
               {video.videoUrl ? (
                 <video
                   src={video.videoUrl}
-                  autoPlay
+                  preload="metadata"
                   muted
                   loop
                   playsInline
+                  onError={() => {
+                    console.warn('Video preview failed (non-fatal):', video.videoUrl)
+                  }}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -63,13 +66,13 @@ export default function VideoDisplay({ videos, selectedVideoId, onVideoChange }:
               )}
               <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
               <div className="absolute bottom-3 left-3 text-white">
-                <p className="text-xs uppercase tracking-[0.18em] text-white/70">@{video.creator.username}</p>
-                <p className="mt-1 text-sm font-semibold leading-tight">{video.videoTitle}</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-white/70">@{video.creator?.username ?? 'creator'}</p>
+                <p className="mt-1 text-sm font-semibold leading-tight">{video.videoTitle || 'Untitled Video'}</p>
               </div>
             </div>
             <div className="p-4">
               <p className="text-xs text-muted-foreground">Tap to open</p>
-              <p className="mt-3 text-sm text-foreground line-clamp-2">{video.codePane.problemTitle}</p>
+              <p className="mt-3 text-sm text-foreground line-clamp-2">{video.codePane?.problemTitle ?? 'Coding Challenge'}</p>
             </div>
           </button>
         )

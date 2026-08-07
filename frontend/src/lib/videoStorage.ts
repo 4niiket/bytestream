@@ -26,19 +26,21 @@ function writeJson(key: string, value: unknown) {
 }
 
 export function getWatchedHistory(): WatchedVideo[] {
-  return readJson<WatchedVideo[]>(WATCHED_HISTORY_KEY, [])
+  const data = readJson<WatchedVideo[]>(WATCHED_HISTORY_KEY, [])
+  return Array.isArray(data) ? data : []
 }
 
 export function addWatchedVideo(video: WatchedVideo) {
   const current = getWatchedHistory()
-  const filtered = current.filter((item) => item.id !== video.id)
+  const filtered = current.filter((item) => item?.id !== video.id)
   const next = [video, ...filtered].slice(0, 20)
   writeJson(WATCHED_HISTORY_KEY, next)
   return next
 }
 
 export function getWatchLater(): number[] {
-  return readJson<number[]>(WATCH_LATER_KEY, [])
+  const data = readJson<number[]>(WATCH_LATER_KEY, [])
+  return Array.isArray(data) ? data : []
 }
 
 export function isWatchLater(videoId: number) {

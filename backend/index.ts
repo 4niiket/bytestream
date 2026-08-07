@@ -87,10 +87,8 @@ async function startServer() {
       select: { id: true },
     });
 
-    if (recentVideos.length > 0) {
-      const videoIds = recentVideos.map((v) => v.id);
-      await preloadVideos(videoIds);
-    }
+    const videoIds = recentVideos ? recentVideos.map((v) => v.id) : [];
+    await preloadVideos(videoIds);
   } catch (err) {
     console.warn("Failed to preload videos:", err);
   }

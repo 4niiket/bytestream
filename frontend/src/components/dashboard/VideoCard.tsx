@@ -17,15 +17,25 @@ export function VideoCard({
   return (
     <article className="group relative rounded-xl bg-card border border-border overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-300 hover:-translate-y-0.5">
       <div className="relative aspect-video overflow-hidden bg-muted">
-        <img
-          src={video.thumbnail}
-          alt={video.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        {video.thumbnail ? (
+          <img
+            src={video.thumbnail}
+            alt={video.title || "Video thumbnail"}
+            loading="lazy"
+            onError={(e) => {
+              // Hide broken thumbnail image gracefully
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-900 text-xs text-muted-foreground">
+            No Thumbnail
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         <button
-          aria-label={`Play ${video.title}`}
+          aria-label={`Play ${video.title || 'Video'}`}
           className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <span className="size-12 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow">
@@ -46,11 +56,20 @@ export function VideoCard({
 
       <div className="p-3.5">
         <h3 className="font-medium text-sm leading-snug text-foreground line-clamp-2 min-h-[2.5rem]">
-          {video.title}
+          {video.title || "Untitled Video"}
         </h3>
         <div className="mt-2 flex items-center gap-2">
-          <img src={video.creatorAvatar} alt="" className="size-6 rounded-full" />
-          <span className="text-xs text-muted-foreground truncate">{video.creator}</span>
+          {video.creatorAvatar ? (
+            <img
+              src={video.creatorAvatar}
+              alt=""
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = 'none';
+              }}
+              className="size-6 rounded-full"
+            />
+          ) : null}
+          <span className="text-xs text-muted-foreground truncate">{video.creator || "Anonymous"}</span>
         </div>
 
         {variant === "upload" && (
