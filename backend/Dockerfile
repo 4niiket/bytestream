@@ -38,7 +38,7 @@ RUN npm ci --omit=dev --ignore-scripts
 
 # Copy generated Prisma files and compiled dist directory
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/generated ./generated
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/dist ./dist
 
