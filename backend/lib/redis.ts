@@ -30,6 +30,7 @@ export const cacheVideo = async (
   videoData: unknown
 ): Promise<void> => {
   try {
+    if (!redisClient.isOpen) return;
     await redisClient.set(
       `video:${videoId}`,
       JSON.stringify(videoData),
@@ -46,6 +47,7 @@ export const getCachedVideo = async (
   videoId: number
 ): Promise<unknown | null> => {
   try {
+    if (!redisClient.isOpen) return null;
     const data = await redisClient.get(`video:${videoId}`);
 
     if (!data) return null;
@@ -61,6 +63,7 @@ export const cacheFeed = async (
   feedData: unknown
 ): Promise<void> => {
   try {
+    if (!redisClient.isOpen) return;
     await redisClient.set(
       "feed:latest",
       JSON.stringify(feedData),
@@ -75,6 +78,7 @@ export const cacheFeed = async (
 
 export const getCachedFeed = async (): Promise<unknown | null> => {
   try {
+    if (!redisClient.isOpen) return null;
     const data = await redisClient.get("feed:latest");
 
     if (!data) return null;
