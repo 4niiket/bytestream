@@ -8,15 +8,12 @@ WORKDIR /app
 # Install OpenSSL for Prisma engine compatibility on Alpine
 RUN apk add --no-cache openssl libc6-compat
 
-# Copy dependency manifests
+# Copy dependency manifests and Prisma schema
 COPY package*.json ./
-
-# Install all dependencies (including devDependencies for build)
-RUN npm ci
-
-# Copy Prisma schema and generate client
 COPY prisma ./prisma/
-RUN npx prisma generate
+
+# Install all dependencies (automatically triggers prisma generate via postinstall)
+RUN npm ci
 
 # Copy source code and build TypeScript
 COPY . .
@@ -35,9 +32,9 @@ ENV PORT=3001
 # Install OpenSSL for Prisma runtime on Alpine
 RUN apk add --no-cache openssl libc6-compat
 
-# Copy dependency manifests and install production dependencies only
+# Copy dependency manifests and install production dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy generated Prisma files and compiled dist directory
 COPY --from=builder /app/prisma ./prisma

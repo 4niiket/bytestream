@@ -9,10 +9,8 @@ RUN apk add --no-cache openssl libc6-compat
 
 # Copy backend manifests and prisma configuration
 COPY backend/package*.json ./
-RUN npm ci
-
 COPY backend/prisma ./prisma/
-RUN npx prisma generate
+RUN npm ci
 
 COPY backend/ .
 RUN npm run build
@@ -28,7 +26,7 @@ ENV PORT=3001
 RUN apk add --no-cache openssl libc6-compat
 
 COPY backend/package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
