@@ -4,6 +4,9 @@ const envApiUrl = (import.meta as { env: Record<string, string> }).env?.VITE_API
 let baseURL = '/api'
 if (envApiUrl) {
   let cleanUrl = envApiUrl.trim().replace(/\/+$/, '')
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    cleanUrl = `https://${cleanUrl}`
+  }
   if (!cleanUrl.endsWith('/api')) {
     cleanUrl += '/api'
   }
