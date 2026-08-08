@@ -88,35 +88,32 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 async function startServer() {
-  const PORT = process.env.PORT || 3001;
+  const PORT = Number(process.env.PORT) || 3001;
 
-  // Connect Redis first
-  try {
-    await initializeRedis();
-  } catch (err) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 ByteStream API listening on 0.0.0.0:${PORT}`);
+  });
+
+  // Non-blocking background initializations
+  initializeRedis().catch((err) => {
     console.error("Failed to connect to Redis:", err);
-  }
+  });
 
-  // Preload cache
-  try {
-    const recentVideos = await prisma.video.findMany({
+  prisma.video
+    .findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
       select: { id: true },
+    })
+    .then((recentVideos) => {
+      const videoIds = recentVideos ? recentVideos.map((v) => v.id) : [];
+      return preloadVideos(videoIds);
+    })
+    .catch((err) => {
+      console.warn("Failed to preload videos:", err);
     });
 
-    const videoIds = recentVideos ? recentVideos.map((v) => v.id) : [];
-    await preloadVideos(videoIds);
-  } catch (err) {
-    console.warn("Failed to preload videos:", err);
-  }
-
-  app.listen(PORT, () => {
-    console.log(`🚀 ByteStream API listening on port ${PORT}`);
-
-    // Run in background
-    checkPistonHealth().catch(console.error);
-  });
+  checkPistonHealth().catch(console.error);
 }
 
 if (!process.env.VERCEL) {
