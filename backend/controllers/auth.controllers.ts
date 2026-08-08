@@ -43,8 +43,9 @@ export const registerUser = async (req: Request, res: Response) => {
       user: { id: newUser.id, username: newUser.username },
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Failed to register user" });
+    console.error("Registration error:", err);
+    const detail = err instanceof Error ? err.message : "Failed to register user";
+    return res.status(500).json({ error: detail });
   }
 };
 
@@ -77,7 +78,8 @@ export const loginUser = async (req: Request, res: Response) => {
       user: { id: user.id, username: user.username },
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Failed to login user" });
+    console.error("Login error:", err);
+    const detail = err instanceof Error ? err.message : "Failed to login user";
+    return res.status(500).json({ error: detail });
   }
 };
