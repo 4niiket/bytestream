@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from '@tanstack/react-router'
 import { useAuth } from '../App'
-import { api } from '../../lib/api'
+import { api, getErrorMessage } from '../../lib/api'
 
 type Mode = 'login' | 'register'
 
@@ -36,9 +36,10 @@ export default function AuthPage() {
       login(token, user)
       navigate({ to: '/feed' })
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        'Something went wrong. Please try again.'
+      const msg = getErrorMessage(
+        err,
+        mode === 'login' ? 'Failed to sign in. Please try again.' : 'Failed to register. Please try again.'
+      )
       setError(msg)
     } finally {
       setLoading(false)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Maximize2, Minimize2 } from 'lucide-react'
 import Editor from '@monaco-editor/react'
-import { api } from '../../lib/api'
+import { api, getErrorMessage } from '../../lib/api'
 
 interface CodePaneProps {
   problemTitle: string
@@ -118,9 +118,7 @@ export default function CodePane({ problemTitle, problemDescription, videoId, te
       setResult(res.data)
       setStatus(res.data.status === 'Accepted' ? 'Passed' : 'Failed')
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        'Request failed. Is the server running?'
+      const msg = getErrorMessage(err, 'Request failed. Is the server running?')
       setResult({ status: 'Error', error: msg })
       setStatus('Failed')
     } finally {

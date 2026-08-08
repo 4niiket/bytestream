@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../App'
-import { api } from '../../lib/api'
+import { api, getErrorMessage } from '../../lib/api'
 
 interface TestCase {
   input: string
@@ -141,9 +141,7 @@ export default function CreatorUploadPage() {
         navigate({ to: '/feed' })
       }, 2000)
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        'Upload failed. Please try again.'
+      const message = getErrorMessage(err, 'Upload failed. Please try again.')
       setError(message)
     } finally {
       setUploading(false)
