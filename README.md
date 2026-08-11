@@ -201,52 +201,6 @@ npm run db:studio
 
 Opens Prisma Studio at http://localhost:5555. Add a User → CodePane (with testCases JSON) → Video to populate the feed.
 
----
-
-## 🐳 Docker Deployment
-
-ByteStream includes production-ready Dockerfiles for both frontend and backend services, as well as a full multi-container Docker Compose setup.
-
-### Option 1: Run Full Production Stack with Docker Compose
-
-To launch the complete application stack (Frontend, Backend API, PostgreSQL, Redis, Piston Code Runner):
-
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-- **Frontend:** http://localhost
-- **Backend API:** http://localhost:3001
-- **Piston Sandbox:** http://localhost:2000
-
-After starting the containers, run database migrations and install language runtimes into Piston:
-
-```bash
-# Run Prisma migrations inside backend container
-docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
-
-# Install code execution runtimes into Piston
-bash install-runtimes.sh
-```
-
-### Option 2: Build Individual Images
-
-#### Backend API
-```bash
-docker build -t bytestream-backend ./backend
-docker run -p 3001:3001 -e DATABASE_URL="your-db-url" -e JWT_SECRET="your-secret" bytestream-backend
-```
-
-Or from the project root:
-```bash
-docker build -t bytestream .
-```
-
-#### Frontend SPA (Nginx)
-```bash
-docker build -t bytestream-frontend ./frontend
-docker run -p 80:80 bytestream-frontend
-```
 
 ---
 

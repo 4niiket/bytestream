@@ -26,8 +26,7 @@ app.use(
       }
       if (
         origin.includes("localhost") ||
-        origin.includes("127.0.0.1") ||
-        origin.endsWith(".vercel.app")
+        origin.includes("127.0.0.1")
       ) {
         return callback(null, true);
       }
@@ -116,8 +115,6 @@ async function startServer() {
   checkPistonHealth().catch(console.error);
 }
 
-if (!process.env.VERCEL) {
-  void startServer();
-}
+void startServer();
 
 export default app;
